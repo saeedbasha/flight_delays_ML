@@ -11,3 +11,5 @@ statsmodels==0.13.5
 pytest==7.3.1
 optuna==3.3.0
 airportsdata==20230717
+pygeodesic==0.1.8
+geopy==2.4.0
