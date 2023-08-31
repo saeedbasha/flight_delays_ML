@@ -18,7 +18,6 @@ def use_xgboost_classification(X_train,X_test,y_train,y_test):
         'n_estimators': 99,
         'seed': 0,
         'learning_rate': hp.uniform('learning_rate', 0.01, 0.3)
-
     }
 
     def objective(space):
