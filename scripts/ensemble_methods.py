@@ -2,7 +2,7 @@ import pandas as pd
 from xgboost import XGBClassifier,XGBRegressor
 from sklearn.metrics import accuracy_score, recall_score, precision_score,mean_squared_error
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
-import scoring
+from scripts import scoring
 
 def use_xgboost_classification(X_train,X_test,y_train,y_test):
     """
