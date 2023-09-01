@@ -1,8 +1,12 @@
 import pandas as pd
 from xgboost import XGBClassifier,XGBRegressor
-from sklearn.metrics import accuracy_score, recall_score, precision_score,mean_squared_error
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
-import scoring
+from scripts import scoring
+
+from sklearn.metrics import accuracy_score, recall_score, precision_score,mean_squared_error
+from sklearn.model_selection import RepeatedStratifiedKFold,GridSearchCV
+from sklearn.ensemble import AdaBoostRegressor
+
 
 def use_xgboost_classification(X_train,X_test,y_train,y_test):
     """
@@ -18,7 +22,6 @@ def use_xgboost_classification(X_train,X_test,y_train,y_test):
         'n_estimators': 99,
         'seed': 0,
         'learning_rate': hp.uniform('learning_rate', 0.01, 0.3)
-
     }
 
     def objective(space):
@@ -96,16 +99,16 @@ def use_xgboost_regression(X_train,X_test,y_train,y_test):
     Using XG-Boost for predictions
     """
 
-    space={'max_depth': hp.quniform("max_depth", 2,18, 1),
+    space={
+        'max_depth': hp.quniform("max_depth", 2,18, 1),
         'gamma': hp.uniform ('gamma', 0,9),
         'reg_alpha' : hp.uniform('reg_alpha', 0,10),
         'reg_lambda' : hp.uniform('reg_lambda', 0,1),
         'colsample_bytree' : hp.uniform('colsample_bytree', 0.5,1),
         'min_child_weight' : hp.quniform('min_child_weight', 0, 10, 1),
-        'n_estimators': 100,
+        'n_estimators': 20,
         'seed': 0,
         'learning_rate': hp.uniform('learning_rate', 0.01, 0.3)
-
     }
 
     def objective(space):
@@ -116,7 +119,7 @@ def use_xgboost_regression(X_train,X_test,y_train,y_test):
                         reg_alpha = int(space['reg_alpha']),
                         min_child_weight=int(space['min_child_weight']),
                         colsample_bytree=int(space['colsample_bytree']),
-                        eval_metric="auc",  # Set eval_metric here
+                        eval_metric="rmse",  # Set eval_metric here
                         )
         
         evaluation = [( X_train, y_train), ( X_test, y_test)]
@@ -167,6 +170,24 @@ def use_xgboost_regression(X_train,X_test,y_train,y_test):
     y_pred = best_model.predict(X_test)
 
     results = scoring.scoring_regression(best_model,X_train,y_train,y_test,y_pred,cross_val=True)
-    print(results)
+    # print(results)
     return results
 
+def use_AdaBoost(X_train,X_test,y_train,y_test,grid_search= True):
+    
+    # Model
+    if grid_search:
+        regr = AdaBoostRegressor(random_state=0) 
+
+        # Grid of values to search
+        grid = dict()
+        grid['n_estimators'] = [100]
+        grid['learning_rate'] = [0.1, 1.0]
+
+        # Evaluation procedure
+        cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+        grid_search = GridSearchCV(estimator=regr, param_grid=grid, n_jobs=-1, cv=cv, scoring='neg_root_mean_squared_error')
+        grid_result = grid_search.fit(X_train, y_train)
+        # regr.predict(X_test)
+    regr = AdaBoostRegressor(random_state=0) 
+    return [grid_result.best_score_, grid_result.best_params_,grid_result.best_params_]
