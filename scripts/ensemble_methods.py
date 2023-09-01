@@ -1,8 +1,11 @@
 import pandas as pd
 from xgboost import XGBClassifier,XGBRegressor
-from sklearn.metrics import accuracy_score, recall_score, precision_score,mean_squared_error
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 from scripts import scoring
+
+from sklearn.metrics import accuracy_score, recall_score, precision_score,mean_squared_error
+from sklearn.ensemble import AdaBoostRegressor
+
 
 def use_xgboost_classification(X_train,X_test,y_train,y_test):
     """
@@ -95,7 +98,8 @@ def use_xgboost_regression(X_train,X_test,y_train,y_test):
     Using XG-Boost for predictions
     """
 
-    space={'max_depth': hp.quniform("max_depth", 2,18, 1),
+    space={
+        'max_depth': hp.quniform("max_depth", 2,18, 1),
         'gamma': hp.uniform ('gamma', 0,9),
         'reg_alpha' : hp.uniform('reg_alpha', 0,10),
         'reg_lambda' : hp.uniform('reg_lambda', 0,1),
@@ -104,7 +108,6 @@ def use_xgboost_regression(X_train,X_test,y_train,y_test):
         'n_estimators': 100,
         'seed': 0,
         'learning_rate': hp.uniform('learning_rate', 0.01, 0.3)
-
     }
 
     def objective(space):
@@ -169,3 +172,8 @@ def use_xgboost_regression(X_train,X_test,y_train,y_test):
     print(results)
     return results
 
+def use_AdaBoost(X_train,X_test,y_train,y_test):
+    regr = AdaBoostRegressor(random_state=0, n_estimators=100)
+    regr.fit(X_train, y_train)
+    # regr.predict(X_test)
+    return [regr.score(X_train,y_train),regr.score(X_test,y_test)]
